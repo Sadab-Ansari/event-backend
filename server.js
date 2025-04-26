@@ -6,6 +6,8 @@ const passport = require("passport");
 const path = require("path");
 const http = require("http");
 const connectDB = require("./config/db");
+const MongoStore = require("connect-mongo"); // Import MongoStore for session storage
+
 const setupSocket = require("./socket/chatSocket"); //  Modular Socket.IO setup
 const setupEventMessagesSocket = require("./socket/eventMessageSocket"); //  Event messages socket
 const setupCountdownSocket = require("./socket/countdownSocket"); //  Countdown socket
@@ -35,15 +37,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-//  Secure Session Setup
+//  Secure Session Setup using MongoDB session store
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your_default_secret",
+    secret: process.env.SESSION_SECRET || "your_default_secret", // You should set a secret
     resave: false,
     saveUninitialized: false, // More secure
+    store: MongoStore.create({
+      mongoUrl:
+        process.env.MONGO_URI ||
+        "mongodb+srv://codesuniyo451:RodG73uOtmDkhmac@event-shere.u5h955v.mongodb.net/?retryWrites=true&w=majority", // MongoDB URI from .env
+      ttl: 14 * 24 * 60 * 60, // Session expiration (14 days)
+    }),
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Secure cookies in production
+      secure: process.env.NODE_ENV === "production", // Secure cookies only in production
       sameSite: "lax",
     },
   })
